@@ -1,0 +1,7 @@
+version: "3"
+
+services:
+  build-rs:
+    build:
+      dockerfile: ./dockerfiles/build-rs/Dockerfile
+      context: ..

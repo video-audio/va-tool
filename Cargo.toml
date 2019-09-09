@@ -1,0 +1,21 @@
+[package]
+name = "va-tool"
+version = "0.0.1"
+edition = "2018"
+authors = ["Ivan Egorov <vany.egorov@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/video-audio/va-tool"
+homepage = "https://github.com/video-audio/va-tool"
+documentation = "https://docs.rs/va-tool/0.0.1/va-tool"
+description = ""
+keywords = [
+    "video", "audio"
+]
+categories = ["video-audio"]
+exclude = [
+    "dockerfiles/*",
+    "run.sh"
+]
+
+[dependencies]
+va-ts = "~0.0.3"
