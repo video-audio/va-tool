@@ -10,7 +10,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN rustup target add x86_64-unknown-linux-musl
 
-WORKDIR /usr/local/src/udp-mpegts
+WORKDIR /usr/local/src/va-tool
 
 RUN mkdir -pv src/
 RUN echo "fn main() {println!(\"---\")}" > ./src/main.rs
@@ -35,8 +35,8 @@ RUN RUSTFLAGS=-Clinker=musl-gcc cargo \
 # -------------------------------------
 FROM alpine:latest
 
-COPY --from=build-rs /usr/local/src/udp-mpegts/target/x86_64-unknown-linux-musl/release/va-tool /usr/local/bin/va-tool
+COPY --from=build-rs /usr/local/src/va-tool/target/x86_64-unknown-linux-musl/release/va-tool /usr/local/bin/va-tool
 
-ENV RUST_BACKTRACE=full
+# ENV RUST_BACKTRACE=full
 
-CMD ["va-tool"]
+# CMD ["va-tool"]
