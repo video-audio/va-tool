@@ -1,5 +1,6 @@
-const END_OPTIONS: &str = "--";
-const KEY_VALUE_SEPARATOR: char = '=';
+use failure::Error;
+
+use regex::Regex;
 
 bitflags! {
     struct State: u8 {
@@ -48,7 +49,6 @@ pub enum Match {
     Positional(String),       // positional parameter
     Key(String),              // --key
     KeyValue(String, String), // --key=value
-    End,                      // --
 }
 
 #[derive(Debug)]
@@ -94,12 +94,12 @@ impl Iterator for MatcherIter<'_> {
     type Item = Match;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let arg = Arg::new(self.iter.next()?);
+        let mut arg = Arg::new(self.iter.next()?);
 
-        if arg.is_option_end() {
+        if arg.is_end() {
             self.state.set_pos();
             self.state.set_end();
-            return Some(Match::End);
+            arg = Arg::new(self.iter.next()?);
         }
 
         if !self.state.is_end() && arg.is_option() {
@@ -109,10 +109,12 @@ impl Iterator for MatcherIter<'_> {
         if self.state.is_pos() {
             Some(Match::Positional(arg.val))
         } else if self.state.is_key() {
+            println!("{:?}", arg.extract_key_and_value());
+
             if let Some(v) = self.iter.peek() {
                 let arg_next = Arg::new(v.to_string());
 
-                if arg_next.is_option_end() || arg_next.is_option() {
+                if arg_next.is_end() || arg_next.is_option() {
                     return Some(Match::Key(arg.val));
                 }
 
@@ -146,7 +148,37 @@ impl Arg {
     }
 
     #[inline(always)]
-    fn is_option_end(&self) -> bool {
-        self.val == END_OPTIONS
+    fn is_end(&self) -> bool {
+        self.val == "--"
+    }
+
+    /// extract
+    ///
+    ///  --key => (Some(key), None)
+    ///  --key:value => (Some(key), Some(value))
+    #[inline(always)]
+    fn extract_key_and_value(&self) -> Result<(Option<String>, Option<String>), Error> {
+        lazy_static! {
+            static ref RE: Regex = Regex::new(
+                r#"(?x)
+                -?-?               # "--" or "-"
+                (?P<key>[a-zA-Z0-9_\-]+)  # key
+                (?:
+                    (:?
+                        =|:
+                    )?
+                    (?P<value>[a-zA-Z0-9_\-]+)  # value
+                )?
+                "#,
+            )
+            .unwrap();
+        }
+
+        let caps = RE.captures(&self.val).unwrap();
+
+        let key = caps.name("key").map(|m| m.as_str().to_string());
+        let value = caps.name("value").map(|m| m.as_str().to_string());
+
+        Ok((key, value))
     }
 }

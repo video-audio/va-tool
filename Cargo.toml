@@ -18,9 +18,12 @@ exclude = [
 ]
 
 [dependencies]
-bitflags = "1.0"
+bitflags = "~1.1"
 chrono = "~0.4"
 clap = "~2.33"
+failure = "~0.1.5"
 fern = { version = "~0.5.8", features = ["colored"] }
+lazy_static = "~1.4"
 log = "~0.4"
+regex = "1"
 va-ts = "~0.0.3"

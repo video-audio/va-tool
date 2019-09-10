@@ -2,6 +2,8 @@
 
 #[macro_use]
 extern crate bitflags;
+#[macro_use]
+extern crate lazy_static;
 
 mod opt;
 
@@ -30,18 +32,20 @@ fn setup_logger() -> Result<(), fern::InitError> {
     Ok(())
 }
 
+#[rustfmt::skip]
 const OPTS: &[&opt::Opt] = &[
     &Opt("verbose", &["vv", "verbose"], OptKind::NoArg),
     &Opt("very-verbose", &["vvv", "very-verbose"], OptKind::NoArg),
     &Opt("daemonize", &["daemonize", "background"], OptKind::NoArg),
     &Opt("foreground", &["foreground"], OptKind::NoArg),
-    /**/
+    &Opt("print-config", &["print-config"], OptKind::NoArg),
+
     &Opt("cfg", &["c", "cfg", "config"], OptKind::Arg),
-    /**/
+
     &Opt("input", &["i", "input"], OptKind::Arg),
-    /**/ &Opt("id", &["id"], OptKind::Arg),
-    /**/ &Opt("name", &["name"], OptKind::Arg),
-    /**/ &Opt("map", &["m", "map"], OptKind::Arg),
+        &Opt("id", &["id"], OptKind::Arg),
+        &Opt("name", &["name"], OptKind::Arg),
+        &Opt("map", &["m", "map"], OptKind::Arg),
 ];
 
 fn main() {
