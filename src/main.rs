@@ -1,21 +1,25 @@
+// #![feature(stmt_expr_attributes)]
+
+#[macro_use]
+extern crate bitflags;
+
+mod opt;
+
+use std::env;
+
 use chrono;
-use clap;
 use fern;
 use log;
-use log::info;
+
+use opt::{Opt, OptKind};
 
 fn setup_logger() -> Result<(), fern::InitError> {
-    let colors = fern::colors::ColoredLevelConfig::new()
-        .trace(fern::colors::Color::Cyan)
-        .debug(fern::colors::Color::Magenta)
-        .info(fern::colors::Color::Green);
-
     fern::Dispatch::new()
         .format(move |out, msg, record| {
             out.finish(format_args!(
                 "[{}] [{}] {}",
                 chrono::Local::now().format("%d/%b/%Y %H:%M:%S"),
-                colors.color(record.level()),
+                record.level(),
                 msg
             ))
         })
@@ -26,23 +30,24 @@ fn setup_logger() -> Result<(), fern::InitError> {
     Ok(())
 }
 
-fn main() {
-    let matches = clap::App::new("V/A tool")
-        .version("0.0.3")
-        .author("Ivan Egorov <vany.egorov@gmail.com>")
-        .about("analyze, dump, mux, demux, encode, decode, filter video/audio streams")
-        .arg(
-            clap::Arg::with_name("input")
-                .index(1)
-                .short("i")
-                .long("input")
-                .help("Sets the input file to use")
-                .required(true)
-                .takes_value(true),
-        )
-        .get_matches();
+const OPTS: &[&opt::Opt] = &[
+    &Opt("verbose", &["vv", "verbose"], OptKind::NoArg),
+    &Opt("very-verbose", &["vvv", "very-verbose"], OptKind::NoArg),
+    &Opt("daemonize", &["daemonize", "background"], OptKind::NoArg),
+    &Opt("foreground", &["foreground"], OptKind::NoArg),
+    /**/
+    &Opt("cfg", &["c", "cfg", "config"], OptKind::Arg),
+    /**/
+    &Opt("input", &["i", "input"], OptKind::Arg),
+    /**/ &Opt("id", &["id"], OptKind::Arg),
+    /**/ &Opt("name", &["name"], OptKind::Arg),
+    /**/ &Opt("map", &["m", "map"], OptKind::Arg),
+];
 
+fn main() {
     setup_logger().unwrap();
 
-    info!("==> {}", matches.value_of("input").unwrap());
+    let matcher = opt::Matcher::new(env::args().skip(1).collect(), OPTS);
+
+    matcher.into_iter().for_each(|r| println!("{:?}", r))
 }

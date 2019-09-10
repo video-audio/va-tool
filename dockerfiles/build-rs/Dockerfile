@@ -30,13 +30,7 @@ RUN RUSTFLAGS=-Clinker=musl-gcc cargo \
   --verbose \
   --target=x86_64-unknown-linux-musl
 
-# RUN cargo test -- --nocapture
-
 # -------------------------------------
 FROM alpine:latest
 
 COPY --from=build-rs /usr/local/src/va-tool/target/x86_64-unknown-linux-musl/release/va-tool /usr/local/bin/va-tool
-
-# ENV RUST_BACKTRACE=full
-
-# CMD ["va-tool"]
