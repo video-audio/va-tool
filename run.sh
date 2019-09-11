@@ -10,12 +10,13 @@
 	--daemonize \
 	--foreground \
 	--vvv \
-	239.255.1.1:5500 \
+	- \
+	udp://239.255.1.1:5500 \
 		-id=1 \
 		-name "tears-of-steel-HD" \
 		-map all \
 			-o file:///tmp/239-255-1-1-5500.ts \
-	239.255.1.2:5500 \
+	udp://239.255.1.2:5500 \
 		-id 2 \
 		-name "tears-of-steel-SD" \
 		-metrics "bitrate" \
@@ -37,13 +38,14 @@
 		-map unk \
 			-metrics "bitrate" \
 			-o file:///tmp/{{i-u-host}}-{{i-u-port}}-{{pid}}-1.dump \
-	239.255.1.3:5500 \
+	udp://239.255.1.3:5500 \
 		-id 3 \
 		-name="big-buck-bunny-HD" \
 	\
-	http://online.video.rbc.ru/online/rbctv_480p/index.m3u8 \
+	"http://online.video.rbc.ru/online/rbctv_480p/index.m3u8" \
 	\
-	-i /tmp/va-dumps/1.ts \
+	-i file:///tmp/va-dumps/1.ts \
 	\
+	"$@" \
 	-- \
-	/tmp/va-dumps/2.ts
+	file:///tmp/va-dumps/2.ts

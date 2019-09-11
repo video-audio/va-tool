@@ -1,57 +1,49 @@
-// #![feature(stmt_expr_attributes)]
-
 #[macro_use]
 extern crate bitflags;
 #[macro_use]
 extern crate lazy_static;
 
+mod config;
+mod logger;
 mod opt;
+mod result;
 
-use std::env;
+use std::process;
 
-use chrono;
-use fern;
-use log;
+use config::Config;
+use result::Result;
 
-use opt::{Opt, OptKind};
+/// main with optional Error
+fn try_main() -> Result<()> {
+    logger::init()?;
 
-fn setup_logger() -> Result<(), fern::InitError> {
-    fern::Dispatch::new()
-        .format(move |out, msg, record| {
-            out.finish(format_args!(
-                "[{}] [{}] {}",
-                chrono::Local::now().format("%d/%b/%Y %H:%M:%S"),
-                record.level(),
-                msg
-            ))
-        })
-        .level(log::LevelFilter::Trace)
-        .chain(std::io::stdout())
-        .apply()?;
+    let cfg = Config::parse()?;
+
+    log::set_max_level(cfg.log_level.to_level_filter());
+
+    if cfg.print_help || cfg.print_version || cfg.print_config {
+        if cfg.print_help {
+            cfg.print_help()
+        }
+
+        if cfg.print_version {
+            cfg.print_version()
+        }
+
+        if cfg.print_config {
+            cfg.print_config();
+        }
+    }
+
+    // config.validate();
 
     Ok(())
 }
 
-#[rustfmt::skip]
-const OPTS: &[&opt::Opt] = &[
-    &Opt("verbose", &["vv", "verbose"], OptKind::NoArg),
-    &Opt("very-verbose", &["vvv", "very-verbose"], OptKind::NoArg),
-    &Opt("daemonize", &["daemonize", "background"], OptKind::NoArg),
-    &Opt("foreground", &["foreground"], OptKind::NoArg),
-    &Opt("print-config", &["print-config"], OptKind::NoArg),
-
-    &Opt("cfg", &["c", "cfg", "config"], OptKind::Arg),
-
-    &Opt("input", &["i", "input"], OptKind::Arg),
-        &Opt("id", &["id"], OptKind::Arg),
-        &Opt("name", &["name"], OptKind::Arg),
-        &Opt("map", &["m", "map"], OptKind::Arg),
-];
-
 fn main() {
-    setup_logger().unwrap();
+    if let Err(err) = try_main() {
+        eprintln!("{}", err);
 
-    let matcher = opt::Matcher::new(env::args().skip(1).collect(), OPTS);
-
-    matcher.into_iter().for_each(|r| println!("{:?}", r))
+        process::exit(1);
+    }
 }
