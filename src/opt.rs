@@ -47,16 +47,16 @@ impl State {
 }
 
 #[derive(Debug)]
-pub enum Match {
+pub enum Match<'opt> {
     /// positional parameter
     Positional(String),
     /// --key | -key
-    Key(String, Option<String>),
+    Key(&'opt str, Option<String>),
     /// --key=value | -key value | --key:value | --key value
-    KeyValue(String, String),
+    KeyValue(&'opt str, String),
 
     /// got option but no argument provided
-    NoArg(String),
+    NoArg(&'opt str),
 
     /// unknown option
     UnknownKey(String),
@@ -77,14 +77,19 @@ pub enum OptKind {
     NoArg,
 }
 
+/// (name, alternatives, kind)
 #[derive(Debug)]
-pub struct Opt<'a>(pub &'a [&'a str], pub OptKind);
+pub struct Opt<'a>(pub &'a str, pub &'a [&'a str], pub OptKind);
 
 pub type Opts<'opt> = &'opt [&'opt Opt<'opt>];
 
 fn opts_get<'opt, 's>(opts: Opts<'opt>, key: &'s str) -> Option<&'opt Opt<'opt>> {
     for opt in opts {
-        for k in opt.0 {
+        if opt.0 == key {
+            return Some(opt);
+        }
+
+        for k in opt.1 {
             if *k == key {
                 return Some(opt);
             }
@@ -106,7 +111,7 @@ impl<'a> Matcher<'a> {
 }
 
 impl<'a> IntoIterator for Matcher<'a> {
-    type Item = Match;
+    type Item = Match<'a>;
     type IntoIter = MatcherIter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -153,8 +158,8 @@ impl<'a> MatcherIter<'a> {
     }
 }
 
-impl Iterator for MatcherIter<'_> {
-    type Item = Match;
+impl<'opt> Iterator for MatcherIter<'opt> {
+    type Item = Match<'opt>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let arg_raw = self.iter.next()?;
@@ -189,18 +194,18 @@ impl Iterator for MatcherIter<'_> {
                 // check if opting defined in options array
                 (Some(key), _) => match opts_get(self.opts, &key) {
                     // known option
-                    Some(opt) => match opt.1 {
+                    Some(opt) => match opt.2 {
                         // no argument required but try to consume next positional if exists
                         // e.g. --debug=true or --debug true
                         OptKind::NoArg => match self.check_value_or_try_peek_next(value) {
-                            Some(value) => Some(Match::Key(key, Some(value))),
-                            None => Some(Match::Key(key, None)),
+                            Some(value) => Some(Match::Key(opt.0, Some(value))),
+                            None => Some(Match::Key(opt.0, None)),
                         },
 
                         // must be with argument
                         OptKind::Arg => match self.check_value_or_try_peek_next(value) {
-                            Some(value) => Some(Match::KeyValue(key, value)),
-                            None => Some(Match::NoArg(key)),
+                            Some(value) => Some(Match::KeyValue(opt.0, value)),
+                            None => Some(Match::NoArg(opt.0)),
                         },
                     },
                     // unknown option

@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::env;
 use url;
 
@@ -6,37 +8,38 @@ use crate::result::Result;
 
 #[rustfmt::skip]
 const OPTS: Opts = &[
-    &Opt(&["vv", "verbose"], OptKind::NoArg),
-    &Opt(&["vvv", "very-verbose"], OptKind::NoArg),
-    &Opt(&["h", "help"], OptKind::NoArg),
-    &Opt(&["daemonize", "background"], OptKind::NoArg),
-    &Opt(&["foreground"], OptKind::NoArg),
-    &Opt(&["print-config"], OptKind::NoArg),
+    &Opt(&"vv", &["verbose"], OptKind::NoArg),
+    &Opt(&"vvv", &["very-verbose"], OptKind::NoArg),
+    &Opt(&"help", &["h"], OptKind::NoArg),
+    &Opt(&"daemonize", &["background"], OptKind::NoArg),
+    &Opt(&"foreground", &[], OptKind::NoArg),
+    &Opt(&"print-config", &[], OptKind::NoArg),
 
-    &Opt(&["c", "cfg", "config"], OptKind::Arg),
+    &Opt(&"config", &["c", "cfg"], OptKind::Arg),
 
-    &Opt(&["i", "input"], OptKind::Arg),
-        &Opt(&["id"], OptKind::Arg),
-        &Opt(&["name"], OptKind::Arg),
-        &Opt(&["m", "map"], OptKind::Arg),
-        &Opt(&["o", "out", "output"], OptKind::Arg),
+    &Opt(&"input", &["i"], OptKind::Arg),
+        &Opt(&"id", &[], OptKind::Arg),
+        &Opt(&"name", &[], OptKind::Arg),
+        &Opt(&"map", &["m"], OptKind::Arg),
+        &Opt(&"out", &["o", "output"], OptKind::Arg),
 ];
 
 pub struct ConfigOutput {
     url: url::Url,
 }
 
-pub struct ConfigMap {
+pub struct ConfigStream {
+    id: u64,
     outputs: Vec<ConfigOutput>,
 }
 
 pub struct ConfigInput {
+    id: u64,
     url: url::Url,
-
-    maps: Vec<ConfigMap>,
 }
 
 pub struct Config {
+    // pub _action: analyze | report | plot
     pub print_help: bool,
     pub print_version: bool,
     pub print_config: bool,
@@ -44,6 +47,7 @@ pub struct Config {
     pub log_level: log::Level,
 
     inputs: Vec<ConfigInput>,
+    streams: Vec<ConfigStream>,
 }
 
 impl Config {
@@ -54,37 +58,32 @@ impl Config {
             print_config: false,
             log_level: log::Level::Info,
 
-            inputs: Vec::new(),
+            inputs: Default::default(),
+            streams: Default::default(),
         };
 
         let opt_matcher = OptMatcher::new(env::args().skip(1).collect(), OPTS);
 
         for (i, mtch) in opt_matcher.into_iter().enumerate() {
             match mtch {
-                OptMatch::Key(ref key, _) if key == "vv" => c.log_level = log::Level::Debug,
-                OptMatch::Key(ref key, _) if key == "vvv" => c.log_level = log::Level::Trace,
-                OptMatch::Key(ref key, _) if key == "help" => c.print_help = true,
-                OptMatch::Key(ref key, _) if key == "version" => c.print_version = true,
-                OptMatch::Key(ref key, _) if key == "print-config" => c.print_config = true,
+                OptMatch::Key(key, _) => match key {
+                    "vv" => c.log_level = log::Level::Debug,
+                    "vvv" => c.log_level = log::Level::Trace,
+                    "help" => c.print_help = true,
+                    "version" => c.print_version = true,
+                    "print-config" => c.print_config = true,
+                    _ => {}
+                },
 
-                OptMatch::KeyValue(ref key, ref value) if key == "input" || key == "i" => {
-                    let cfg_input = ConfigInput {
-                        url: url::Url::parse(value)?,
-                        maps: Default::default(),
-                    };
+                OptMatch::KeyValue(key, value) => match key {
+                    "input" | "i" => c.push_input(value)?,
+                    _ => {}
+                },
 
-                    c.inputs.push(cfg_input);
-                }
-
-                OptMatch::Positional(ref value) | OptMatch::ExtraPositional(ref value) => {
+                OptMatch::Positional(value) | OptMatch::ExtraPositional(value) => {
                     if i == 0 && value == "analyze" {
                     } else {
-                        let cfg_input = ConfigInput {
-                            url: url::Url::parse(value)?,
-                            maps: Default::default(),
-                        };
-
-                        c.inputs.push(cfg_input);
+                        c.push_input(value)?
                     }
                 }
 
@@ -118,9 +117,21 @@ impl Config {
     pub fn print_version(&self) {}
 
     pub fn print_config(&self) {
+        println!("log-level: {}", self.log_level.to_string().to_lowercase());
         println!("inputs:");
         for input in self.inputs.iter() {
             println!("  - url: {}", input.url);
         }
+    }
+
+    pub fn push_input(&mut self, url_raw: String) -> Result<()> {
+        let cfg_input = ConfigInput {
+            id: 0,
+            url: url::Url::parse(&url_raw)?,
+        };
+
+        self.inputs.push(cfg_input);
+
+        Ok(())
     }
 }
