@@ -1,0 +1,64 @@
+inputs:
+  - id: 1
+    url: udp://239.255.1.1:5500
+    flags: ["loop"]
+    map:
+      - kind: iat
+      - kind: bitrate-total
+      - kind: bitrate-per-pid
+      - kind: cc / MLR
+      - kind: cast
+        o: file:///tmp/dump.$(ext)  # dump.ts
+
+      # restream
+      - kind: cast
+        o: udp://239.255.1.1:5500
+        flags: ["CBR", "VBR"]
+        bitrate: 10Mbit  # for CBR only
+        if: ens1f0.133@ens1f0
+        fifo-sz: 10MB
+
+  - id: 2
+    url: rtp://10.10.0.1:9000
+    map:
+      - kind: cast
+        o: rtp:///10.10.2.100:9000
+
+  - id: 3
+    url: file:///mnt/data/bbb.mp4
+    flags: ["re"]  # see ffmpeg re
+
+# https://doc.rust-lang.org/std/sync/mpsc/
+# https://docs.rs/crossbeam/0.7.2/crossbeam/
+sources:
+  - id: 100
+    inputs:
+      - id: [100, 1]
+        src: 1:v:1
+        map:
+          - kind: bitrate
+          - o: file:///tmp/dump.$(ext)  # dump.h264
+          - o: rtp://10.10.2.100:9000  # restream
+      - id: [100, 2]
+        src: 2:v
+      - id: [100, 3]
+        src: 3:v
+      - id: [100, 4]
+        src: 0:0x100
+      - id: 10005
+        src: 257
+    map:
+      - id: 10001
+        decoders:
+          - {id: 1000101, device: GPU-NV, gpu-bus-id: 0000:01:00.0, nvenc-deinterlace-mode: autoselect}
+          - {id: 1000102, device: CPU-libavdc}
+        resizer:
+          - {}
+
+  - id: 101
+    inputs:
+      - src: 1
+    map:
+      - kind: pts
+      - kind: dts
+      - kind: pcr
