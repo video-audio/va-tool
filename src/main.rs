@@ -35,7 +35,7 @@ fn try_main() -> Result<()> {
         }
     }
 
-    // config.validate();
+    cfg.validate()?;
 
     Ok(())
 }

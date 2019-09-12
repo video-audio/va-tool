@@ -44,7 +44,7 @@
 	\
 	"http://online.video.rbc.ru/online/rbctv_480p/index.m3u8" \
 	\
-	-i file:///tmp/va-dumps/1.ts \
+	-i /tmp/va-dumps/1.ts \
 	\
 	"$@" \
 	-- \

@@ -30,6 +30,8 @@ RUN RUSTFLAGS=-Clinker=musl-gcc cargo \
   --verbose \
   --target=x86_64-unknown-linux-musl
 
+RUN strip ./target/x86_64-unknown-linux-musl/release/va-tool
+
 # -------------------------------------
 FROM alpine:latest
 
