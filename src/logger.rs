@@ -1,8 +1,6 @@
-use std::result;
-
 use log::{self, Log};
 
-use crate::result::Result;
+use crate::error::{Error, Result};
 
 pub fn init() -> Result<()> {
     Logger::init()?;
@@ -17,8 +15,8 @@ struct Logger(());
 const LOGGER: &Logger = &Logger(());
 
 impl Logger {
-    fn init() -> result::Result<(), log::SetLoggerError> {
-        log::set_logger(LOGGER)
+    fn init() -> Result<()> {
+        log::set_logger(LOGGER).map_err(Error::logger)
     }
 }
 

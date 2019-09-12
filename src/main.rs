@@ -4,20 +4,20 @@ extern crate bitflags;
 extern crate lazy_static;
 
 mod config;
+mod error;
 mod logger;
 mod opt;
-mod result;
 
 use std::process;
 
 use config::Config;
-use result::Result;
+use error::{Error, Result};
 
 /// main with optional Error
 fn try_main() -> Result<()> {
     logger::init()?;
 
-    let cfg = Config::parse()?;
+    let cfg = Config::parse().map_err(Error::config)?;
 
     log::set_max_level(cfg.log_level.to_level_filter());
 

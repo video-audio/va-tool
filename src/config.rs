@@ -3,8 +3,8 @@
 use std::env;
 use url;
 
+use crate::error::{Error, Result};
 use crate::opt::{Match as OptMatch, Matcher as OptMatcher, Opt, OptKind, Opts};
-use crate::result::Result;
 
 #[rustfmt::skip]
 const OPTS: Opts = &[
@@ -127,7 +127,7 @@ impl Config {
     pub fn push_input(&mut self, url_raw: String) -> Result<()> {
         let cfg_input = ConfigInput {
             id: 0,
-            url: url::Url::parse(&url_raw)?,
+            url: url::Url::parse(&url_raw).map_err(|err| Error::url_parse(err, url_raw))?,
         };
 
         self.inputs.push(cfg_input);

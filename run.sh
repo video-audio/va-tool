@@ -11,7 +11,7 @@
 	--foreground \
 	--vvv \
 	- \
-	udp://239.255.1.1:5500 \
+	239.255.1.1:5500 \
 		-id=1 \
 		-name "tears-of-steel-HD" \
 		-map all \
