@@ -9,6 +9,12 @@ pub enum ErrorKind {
     Logger,
     Config,
     URLParse(String),
+    Signal,
+
+    SourceSpawn,
+    SourceInputLock(String),
+    SourceStop,
+    SourceJoin(String),
 }
 
 #[derive(Debug)]
@@ -27,6 +33,26 @@ impl Error {
 
     pub(crate) fn logger<E: Fail>(err: E) -> Error {
         Error::from(err.context(ErrorKind::Logger))
+    }
+
+    pub(crate) fn signal<E: Fail>(err: E) -> Error {
+        Error::from(err.context(ErrorKind::Signal))
+    }
+
+    pub(crate) fn source_spawn<E: Fail>(err: E) -> Error {
+        Error::from(err.context(ErrorKind::SourceSpawn))
+    }
+
+    pub(crate) fn source_join<S: AsRef<str>>(reason: S) -> Error {
+        Error::from(ErrorKind::SourceJoin(reason.as_ref().to_string()))
+    }
+
+    pub(crate) fn source_input_lock<S: AsRef<str>>(reason: S) -> Error {
+        Error::from(ErrorKind::SourceInputLock(reason.as_ref().to_string()))
+    }
+
+    pub(crate) fn source_stop<E: Fail>(err: E) -> Error {
+        Error::from(err.context(ErrorKind::SourceStop))
     }
 }
 
@@ -56,6 +82,16 @@ impl fmt::Display for ErrorKind {
             ErrorKind::Logger => write!(f, "logger error"),
             ErrorKind::Config => write!(f, "config parse error"),
             ErrorKind::URLParse(url_raw) => write!(f, "url-parse error (:url-raw {})", url_raw),
+            ErrorKind::Signal => write!(f, "subscription to signals failed"),
+
+            ErrorKind::SourceSpawn => write!(f, "source-spawn thread error"),
+            ErrorKind::SourceInputLock(reason) => write!(
+                f,
+                "lock input inside source to read data failed (:reason {})",
+                reason
+            ),
+            ErrorKind::SourceStop => write!(f, "source stop error"),
+            ErrorKind::SourceJoin(reason) => write!(f, "source-join error (:reason {})", reason),
         }
     }
 }

@@ -5,37 +5,88 @@ extern crate lazy_static;
 
 mod config;
 mod error;
+mod input;
 mod logger;
 mod opt;
+mod source;
 
 use std::process;
 
-use config::Config;
-use error::{Error, Result};
+use crossbeam_channel::{bounded, select, Receiver};
+use log::info;
+
+use crate::config::Config;
+use crate::error::{Error, Result};
+use crate::input::InputUDP;
+use crate::source::Source;
+
+fn signal_chan() -> Result<Receiver<()>> {
+    let (sender, receiver) = bounded(16);
+
+    ctrlc::set_handler(move || {
+        let _ = sender.send(());
+    })
+    .map_err(Error::signal)?;
+
+    Ok(receiver)
+}
+
+struct App {
+    config: Config,
+}
+
+impl App {
+    fn new(config: Config) -> App {
+        App { config }
+    }
+
+    fn start(&self) -> Result<()> {
+        for input in self.config.inputs.iter() {
+            let input = InputUDP::new(input.url.clone());
+
+            let mut source = Source::new(input);
+            source.start()?;
+        }
+
+        let chan = signal_chan()?;
+        select! {
+            recv(chan) -> _ => {
+                info!("(SIGINT) will shutdown!");
+            }
+        }
+
+        Ok(())
+    }
+}
 
 /// main with optional Error
 fn try_main() -> Result<()> {
     logger::init()?;
 
-    let cfg = Config::parse().map_err(Error::config)?;
+    let config = Config::parse().map_err(Error::config)?;
 
-    log::set_max_level(cfg.log_level.to_level_filter());
+    log::set_max_level(config.log_level.to_level_filter());
 
-    if cfg.print_help || cfg.print_version || cfg.print_config {
-        if cfg.print_help {
-            cfg.print_help()
+    if config.print_help || config.print_version || config.print_config {
+        if config.print_help {
+            config.print_help()
         }
 
-        if cfg.print_version {
-            cfg.print_version()
+        if config.print_version {
+            config.print_version()
         }
 
-        if cfg.print_config {
-            cfg.print_config();
+        if config.print_config {
+            config.print_config();
         }
+
+        return Ok(());
     }
 
-    cfg.validate()?;
+    config.validate()?;
+
+    let app = App::new(config);
+    app.start()?;
 
     Ok(())
 }

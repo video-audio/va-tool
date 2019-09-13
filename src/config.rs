@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::env;
 
 use regex::Regex;
@@ -22,13 +20,14 @@ const OPTS: Opts = &[
         &Opt(&"out", &["o", "output"], OptKind::Arg),
 ];
 
+#[allow(dead_code)]
 pub struct ConfigOutput {
     url: Url,
 }
 
 pub struct ConfigInput {
     id: u64,
-    url: Url,
+    pub url: Url,
 }
 
 pub struct Config {
@@ -39,7 +38,7 @@ pub struct Config {
 
     pub log_level: log::Level,
 
-    inputs: Vec<ConfigInput>,
+    pub inputs: Vec<ConfigInput>,
 }
 
 impl Config {
