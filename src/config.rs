@@ -17,6 +17,7 @@ const OPTS: Opts = &[
     &Opt(&"config", &["c", "cfg"], OptKind::Arg),
 
     &Opt(&"input", &["i"], OptKind::Arg),
+        &Opt(&"fifo-sz", &["udp-fifo-sz", "udp-fifo-size","fifo-size"], OptKind::Arg),
         &Opt(&"out", &["o", "output"], OptKind::Arg),
 ];
 
@@ -28,6 +29,7 @@ pub struct ConfigOutput {
 pub struct ConfigInput {
     id: u64,
     pub url: Url,
+    pub udp_fifo_sz: usize,
 }
 
 pub struct Config {
@@ -66,7 +68,15 @@ impl Config {
                 },
 
                 OptMatch::KeyValue(key, value) => match key {
-                    "input" | "i" => c.push_input(value)?,
+                    "input" => c.push_input(value)?,
+                    "fifo-sz" => {
+                        let udp_fifo_sz = value.parse::<usize>().unwrap();
+                        c.inputs.last_mut().and_then(|input| {
+                            input.udp_fifo_sz = udp_fifo_sz;
+                            Some(input)
+                        });
+                    }
+
                     _ => {}
                 },
 
@@ -104,6 +114,9 @@ impl Config {
         println!("  -vv, --verbose                 | <bool>    | ... ");
         println!("  -vvv, --very-verbose           | <bool>    | ... ");
         println!("  -i, --intput                   | <str/url> | Where to read from");
+        println!("    --fifo-sz                    | <size>    | circular buffer size; result allocaed size");
+        println!("                                             . is $(mpeg-ts-packer-size) * $(fifo-size)");
+        println!("                                             . mpeg-ts-packer-size is 188");
         println!("  -o, --output, --out            | <str/url> | Where to write to");
         println!();
     }
@@ -118,6 +131,9 @@ impl Config {
         for input in self.inputs.iter() {
             println!("  - id: {}", input.id);
             println!("    url: {}", input.url);
+            if input.url.scheme() == "udp" {
+                println!("    udp-fifo-sz: {}", input.udp_fifo_sz);
+            }
         }
     }
 
@@ -129,6 +145,7 @@ impl Config {
         let cfg_input = ConfigInput {
             id: 0,
             url: url_parse(&url_raw)?,
+            udp_fifo_sz: 5 * 1000,
         };
 
         self.inputs.push(cfg_input);

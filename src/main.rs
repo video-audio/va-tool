@@ -7,6 +7,7 @@ mod config;
 mod error;
 mod input;
 mod logger;
+mod mediacontainer;
 mod opt;
 mod source;
 
@@ -17,7 +18,8 @@ use log::info;
 
 use crate::config::Config;
 use crate::error::{Error, Result};
-use crate::input::InputUDP;
+use crate::input::{InputFile, InputUdp};
+use crate::mediacontainer::Mediacontainer;
 use crate::source::Source;
 
 fn signal_chan() -> Result<Receiver<()>> {
@@ -42,10 +44,27 @@ impl App {
 
     fn start(&self) -> Result<()> {
         for input in self.config.inputs.iter() {
-            let input = InputUDP::new(input.url.clone());
+            match input.url.scheme() {
+                "udp" => {
+                    let mut udp = InputUdp::new(input.url.clone());
+                    udp.fifo_sz(input.udp_fifo_sz);
 
-            let mut source = Source::new(input);
-            source.start()?;
+                    let mut source = Source::new(udp);
+                    source.start()?;
+
+                    let mc = Mediacontainer::from(&input.url);
+                    if mc == Mediacontainer::Ts {
+                        // source.add_consumer(ts-demuxer)
+                    }
+                }
+                "file" => {
+                    let input = InputFile::new(input.url.clone());
+
+                    let mut source = Source::new(input);
+                    source.start()?;
+                }
+                _ => {}
+            };
         }
 
         let chan = signal_chan()?;
