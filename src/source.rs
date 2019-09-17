@@ -6,9 +6,12 @@ use std::time::Duration;
 use log::error;
 
 use crate::error::{Error, Result};
+use crate::filter::Filter;
 use crate::input::Input;
 
 pub struct Source<I> {
+    filter: Filter,
+
     input: Arc<Mutex<I>>,
 
     thread: Option<thread::JoinHandle<()>>,
@@ -20,6 +23,8 @@ where
 {
     pub fn new(input: I) -> Source<I> {
         Source {
+            filter: Default::default(),
+
             input: Arc::new(Mutex::new(input)),
 
             thread: None,
@@ -29,6 +34,7 @@ where
     pub fn start(&mut self) -> Result<()> {
         let input = self.input.clone();
 
+        #[inline(always)]
         fn fn_lock_map_err<I>(err: std::sync::PoisonError<std::sync::MutexGuard<'_, I>>) -> Error {
             Error::source_input_lock(err.to_string())
         }
@@ -41,7 +47,7 @@ where
             loop {
                 input.lock().map_err(fn_lock_map_err)?.read()?;
 
-                thread::sleep(Duration::from_secs(1));
+                // thread::sleep(Duration::from_secs(1));
             }
         };
 

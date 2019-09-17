@@ -5,6 +5,7 @@ extern crate lazy_static;
 
 mod config;
 mod error;
+mod filter;
 mod input;
 mod logger;
 mod mediacontainer;
