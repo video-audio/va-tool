@@ -21,7 +21,7 @@ exclude = [
 bitflags = "1.2.1"
 ctrlc = "3.1"
 crossbeam-channel = "0.4"
-failure = "0.1.5"
+failure = "0.1.8"
 lazy_static = "1.4.0"
 log = { version = "0.4.8", features = ["std"] }
 regex = "1.3.1"
