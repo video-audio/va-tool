@@ -26,4 +26,4 @@ lazy_static = "1.4.0"
 log = { version = "0.4.11", features = ["std"] }
 regex = "1.4.2"
 ts = { package = "va-ts", version = "~0.0.3"}
-url = "2.1.1"
+url = "2.2.0"
