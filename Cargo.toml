@@ -24,6 +24,6 @@ crossbeam-channel = "0.5"
 failure = "0.1.8"
 lazy_static = "1.4.0"
 log = { version = "0.4.17", features = ["std"] }
-regex = "1.5.5"
+regex = "1.5.6"
 ts = { package = "va-ts", version = "~0.0.4"}
 url = "2.2.2"
