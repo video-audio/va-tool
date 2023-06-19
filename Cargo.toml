@@ -19,7 +19,7 @@ exclude = [
 
 [dependencies]
 bitflags = "2.1.0"
-ctrlc = "3.2"
+ctrlc = "3.4"
 crossbeam-channel = "0.5"
 failure = "0.1.8"
 lazy_static = "1.4.0"
