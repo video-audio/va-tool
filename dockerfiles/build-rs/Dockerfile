@@ -1,4 +1,4 @@
-FROM debian:11 as build-rs
+FROM debian:bullseye-20260623 as build-rs
 
 RUN apt-get update
 RUN apt-get install -y \
